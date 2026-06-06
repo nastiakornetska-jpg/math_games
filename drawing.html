@@ -326,14 +326,21 @@
     function getPx(mathX) { return centerX + mathX * scale; }
     function getPy(mathY) { return centerY - mathY * scale; }
     
-    function getMathPos(clientX, clientY) {
-        const rect = canvas.getBoundingClientRect();
-        const pxX = clientX - rect.left;
-        const pxY = clientY - rect.top;
-        let mathX = Math.round(((pxX - centerX) / scale) * 2) / 2;
-        let mathY = Math.round(((centerY - pxY) / scale) * 2) / 2;
-        return { x: mathX, y: mathY };
-    }
+function getMathPos(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    
+    // Рахуємо коефіцієнт стиснення (якщо екран телефону зменшив canvas)
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    // Множимо координати миші/пальця на цей коефіцієнт
+    const pxX = (clientX - rect.left) * scaleX;
+    const pxY = (clientY - rect.top) * scaleY;
+    
+    let mathX = Math.round(((pxX - centerX) / scale) * 2) / 2;
+    let mathY = Math.round(((centerY - pxY) / scale) * 2) / 2;
+    return { x: mathX, y: mathY };
+}
 
     function drawGrid() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
