@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Малюнок по координатах</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --blue: #3b82f6;
+            --green: #84cc16;
+            --dark: #1e293b;
+            --gray: #9ca3af;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            color: var(--dark);
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            max-width: 1150px;
+            width: 100%;
+        }
+
+        /* Полотно */
+        .canvas-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background-color: #fff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            cursor: crosshair;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+        }
+
+        /* Панель керування */
+        .control-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .level-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .lvl-btn {
+            flex: 1 1 calc(25% - 10px);
+            padding: 10px;
+            border: none;
+            background: #f1f5f9;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #4a5568;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .lvl-btn:hover { background: #e2e8f0; }
+        .lvl-btn.active { background: var(--blue); color: white; }
+
+        .task-panel {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        /* Таймер */
+        .timer-display {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #475569;
+            background: #e2e8f0;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+
+        .target-coord {
+            font-size: 42px;
+            font-weight: bold;
+            color: var(--blue);
+            margin: 10px 0;
+            font-family: monospace;
+        }
+
+        .instruction {
+            font-size: 18px;
+            font-weight: 600;
+            color: #475569;
+            margin-top: 10px;
+        }
+
+        .feedback {
+            min-height: 24px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .text-error { color: #ef4444; }
+        .text-success { color: var(--green); }
+
+        /* Список точок */
+        .points-list {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 350px;
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .point-item { color: #64748b; transition: 0.3s; }
+        .point-item.done { text-decoration: line-through; color: #cbd5e1; }
+        .point-item.active { color: var(--blue); font-weight: bold; font-size: 18px; }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--green);
+            width: 0%;
+            transition: 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="canvas-section">
+        <h3 style="margin-top: 0; color: #1e293b;">Координатна площина</h3>
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+    </div>
+
+    <div class="control-section">
+        <div class="level-selector">
+            <button class="lvl-btn active" onclick="loadLevel(1)" id="btn-lvl-1">1 (Легко)</button>
+            <button class="lvl-btn" onclick="loadLevel(2)" id="btn-lvl-2">2 (Легко)</button>
+            <button class="lvl-btn" onclick="loadLevel(3)" id="btn-lvl-3">3 (Середньо)</button>
+            <button class="lvl-btn" onclick="loadLevel(4)" id="btn-lvl-4">4 (Середньо)</button>
+            <button class="lvl-btn" onclick="loadLevel(5)" id="btn-lvl-5">5 (Середньо)</button>
+            <button class="lvl-btn" onclick="loadLevel(6)" id="btn-lvl-6">6 (Складно)</button>
+            <button class="lvl-btn" onclick="loadLevel(7)" id="btn-lvl-7">7 (Складно)</button>
+            <button class="lvl-btn" onclick="loadLevel(8)" id="btn-lvl-8">8 (Експерт)</button>
+        </div>
+
+        <div class="task-panel">
+            <div class="timer-display" id="timer-display">00:00</div>
+            <div class="instruction" id="instruction-text">Поставте початкову точку:</div>
+            <div class="target-coord" id="current-target">(0; 0)</div>
+            <div class="feedback" id="feedback-msg"></div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <h4 style="margin: 0 0 10px 0; color: #475569;">Маршрут малювання:</h4>
+        <div class="points-list" id="points-list"></div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    // Динамічний масштаб
+    let currentLimit = 10; 
+    let scale = 1;
+
+    // Стан гри
+    let currentLevel = [];
+    let currentIndex = 0;
+    let hoverPos = null;
+
+    // Стан таймера
+    let timerInterval = null;
+    let startTime = 0;
+    let isTimerRunning = false;
+
+    // База рівнів з індивідуальними лімітами сітки (limit)
+    const levels = {
+        1: { limit: 5, data: [ // Кораблик (від -5 до 5)
+            { t: 'start', x: -3, y: 0 }, { t: 'line', x: 3, y: 0 }, { t: 'line', x: 1, y: -2 }, { t: 'line', x: -1, y: -2 }, { t: 'line', x: -3, y: 0 },
+            { t: 'start', x: 0, y: 0 }, { t: 'line', x: 0, y: 4 },
+            { t: 'start', x: 0, y: 4 }, { t: 'line', x: 2, y: 1 }, { t: 'line', x: 0, y: 1 }
+        ]},
+        2: { limit: 10, data: [ // Зірка
+            { t: 'start', x: 0, y: 8 }, { t: 'line', x: 2, y: 2 }, { t: 'line', x: 8, y: 2 }, 
+            { t: 'line', x: 3, y: -1 }, { t: 'line', x: 5, y: -7 }, { t: 'line', x: 0, y: -4 }, 
+            { t: 'line', x: -5, y: -7 }, { t: 'line', x: -3, y: -1 }, { t: 'line', x: -8, y: 2 }, 
+            { t: 'line', x: -2, y: 2 }, { t: 'line', x: 0, y: 8 }
+        ]},
+        3: { limit: 10, data: [ // Будиночок
+            { t: 'start', x: -4, y: -4 }, { t: 'line', x: 4, y: -4 }, { t: 'line', x: 4, y: 2 }, { t: 'line', x: -4, y: 2 }, { t: 'line', x: -4, y: -4 },
+            { t: 'start', x: -5, y: 2 }, { t: 'line', x: 0, y: 7 }, { t: 'line', x: 5, y: 2 },
+            { t: 'start', x: 2, y: 5 }, { t: 'line', x: 2, y: 8 }, { t: 'line', x: 3, y: 8 }, { t: 'line', x: 3, y: 4 },
+            { t: 'start', x: -1, y: -4 }, { t: 'line', x: -1, y: -1 }, { t: 'line', x: 1, y: -1 }, { t: 'line', x: 1, y: -4 },
+            { t: 'start', x: -3, y: 0 }, { t: 'line', x: -2, y: 0 }, { t: 'line', x: -2, y: 1 }, { t: 'line', x: -3, y: 1 }, { t: 'line', x: -3, y: 0 }
+        ]},
+        4: { limit: 6, data: [ // Метелик (від -6 до 6, щоб був крупним)
+            { t: 'start', x: 0, y: 3 }, { t: 'line', x: 0, y: -4 },
+            { t: 'start', x: 0, y: 2 }, { t: 'line', x: 4, y: 4 }, { t: 'line', x: 5, y: 1 }, { t: 'line', x: 2, y: 0 }, { t: 'line', x: 4, y: -3 }, { t: 'line', x: 1, y: -2 }, { t: 'line', x: 0, y: -1 },
+            { t: 'start', x: 0, y: 2 }, { t: 'line', x: -4, y: 4 }, { t: 'line', x: -5, y: 1 }, { t: 'line', x: -2, y: 0 }, { t: 'line', x: -4, y: -3 }, { t: 'line', x: -1, y: -2 }, { t: 'line', x: 0, y: -1 },
+            { t: 'start', x: 0, y: 3 }, { t: 'line', x: 1, y: 4 }, { t: 'point', x: 1.5, y: 4.5 },
+            { t: 'start', x: 0, y: 3 }, { t: 'line', x: -1, y: 4 }, { t: 'point', x: -1.5, y: 4.5 }
+        ]},
+        5: { limit: 10, data: [ // Задача 1242
+            { t: 'start', x: 8, y: 0 }, { t: 'line', x: 6, y: 2 }, { t: 'line', x: 0, y: 6 }, { t: 'line', x: 1, y: 4 }, { t: 'line', x: -1, y: 4 },
+            { t: 'line', x: -3, y: 3 }, { t: 'line', x: -6, y: 0 }, { t: 'line', x: -8, y: 0 }, { t: 'line', x: -6, y: -1 }, { t: 'line', x: -6, y: -2.5 },
+            { t: 'line', x: -5, y: -1 }, { t: 'line', x: -1, y: 1 }, { t: 'line', x: 0, y: 1 }, { t: 'line', x: 3, y: 0 }, { t: 'line', x: 2, y: -1 },
+            { t: 'line', x: 5, y: -1 }, { t: 'line', x: 6, y: -2 }, { t: 'line', x: 7, y: -2 }, { t: 'line', x: 9, y: -3 }, { t: 'line', x: 8, y: -1 }, { t: 'line', x: 8, y: 0 },
+            { t: 'point', x: 7, y: -1 }
+        ]},
+        6: { limit: 8, data: [ // Задача 1243 (ліміт 8 ідеально облягає фігуру)
+            { t: 'start', x: -5, y: 3 }, { t: 'line', x: -2, y: 1 }, { t: 'line', x: 1, y: 2 }, { t: 'line', x: 2, y: 3 }, { t: 'line', x: 6, y: 4 }, { t: 'line', x: -2, y: 6 }, { t: 'line', x: -5, y: 3 },
+            { t: 'start', x: -3, y: 3 }, { t: 'line', x: -3, y: 4 }, { t: 'line', x: -2, y: 5 }, { t: 'line', x: -2, y: 3 }, { t: 'line', x: -3, y: 3 },
+            { t: 'start', x: -6, y: 7 }, { t: 'line', x: -2, y: 6 },
+            { t: 'start', x: 2, y: 7 }, { t: 'line', x: -2, y: 6 },
+            { t: 'start', x: 5, y: 3 }, { t: 'line', x: 7, y: 5 },
+            { t: 'start', x: 5, y: 5 }, { t: 'line', x: 7, y: 3 }
+        ]},
+        7: { limit: 15, data: [ // Задача 867
+            { t: 'start', x: -4, y: 4 }, { t: 'line', x: -5.5, y: 5.5 }, { t: 'line', x: -7, y: 8 }, { t: 'line', x: -8, y: 11 }, { t: 'line', x: -9, y: 10.5 }, { t: 'line', x: -14, y: 10.5 },
+            { t: 'line', x: -13, y: 9 }, { t: 'line', x: -12, y: 6 }, { t: 'line', x: -9.5, y: 5.5 }, { t: 'line', x: -8.5, y: 4 }, { t: 'line', x: -9, y: 1.5 }, { t: 'line', x: -7, y: 1.5 },
+            { t: 'line', x: -5, y: 0 }, { t: 'line', x: -4, y: -3 }, { t: 'line', x: -2.5, y: -1.5 }, { t: 'line', x: -1, y: -1 }, { t: 'line', x: 1, y: -1.5 }, { t: 'line', x: 2, y: -2 },
+            { t: 'line', x: 2.5, y: -1 }, { t: 'line', x: 3.5, y: 0 }, { t: 'line', x: 5, y: 0.5 }, { t: 'line', x: 7.5, y: 0.5 }, { t: 'line', x: 8.5, y: 1.5 }, { t: 'line', x: 10.5, y: 2.5 },
+            { t: 'line', x: 13, y: 3 }, { t: 'line', x: 11, y: 3.5 }, { t: 'line', x: 9.5, y: 4 }, { t: 'line', x: 8, y: 5 }, { t: 'line', x: 7, y: 6 }, { t: 'line', x: 5, y: 5 },
+            { t: 'line', x: 3, y: 4 }, { t: 'line', x: 1, y: 3 }, { t: 'line', x: 0, y: 2.5 }, { t: 'line', x: -0.5, y: 3 }, { t: 'line', x: 0, y: 5 }, { t: 'line', x: -0.5, y: 4.5 },
+            { t: 'line', x: -1.5, y: 5 }, { t: 'line', x: -4, y: 4 }
+        ]},
+        8: { limit: 15, data: [ // Задача 868
+            { t: 'start', x: 2, y: -7.5 }, { t: 'line', x: 2, y: -5 }, { t: 'line', x: 1.5, y: -3 }, { t: 'line', x: 0, y: 0 }, { t: 'line', x: -1, y: 0.5 }, { t: 'line', x: -3, y: 0.5 },
+            { t: 'line', x: -4.5, y: -1 }, { t: 'line', x: -5, y: -3 }, { t: 'line', x: -5, y: -5 }, { t: 'line', x: -4, y: -6.5 }, { t: 'line', x: -2.5, y: -6 }, { t: 'line', x: -1.5, y: -6.5 },
+            { t: 'line', x: -1.5, y: -7.5 }, { t: 'line', x: -4.5, y: -7.5 }, { t: 'line', x: -6.5, y: -5 }, { t: 'line', x: -7, y: -2.5 }, { t: 'line', x: -11.5, y: 8 }, { t: 'line', x: -13, y: 7.5 },
+            { t: 'line', x: -14, y: 9 }, { t: 'line', x: -13, y: 10 }, { t: 'line', x: -11, y: 10.5 }, { t: 'line', x: -8.5, y: 9 }, { t: 'line', x: -8.5, y: 4 }, { t: 'line', x: -7.5, y: 3.5 },
+            { t: 'line', x: -7, y: 4 }, { t: 'line', x: -6, y: 5 }, { t: 'line', x: -5, y: 6.5 }, { t: 'line', x: -4, y: 7 }, { t: 'line', x: -2, y: 7.5 }, { t: 'line', x: 0, y: 7 },
+            { t: 'line', x: 1, y: 6 }, { t: 'line', x: 1.5, y: 4 }, { t: 'line', x: 2, y: 2.5 }, { t: 'line', x: 3, y: 1.5 }, { t: 'line', x: 4, y: 2 }, { t: 'line', x: 2.5, y: 3.5 },
+            { t: 'line', x: 3.5, y: 4 }, { t: 'line', x: 4, y: 7 }, { t: 'line', x: 5, y: 5.5 }, { t: 'line', x: 6, y: 5 }, { t: 'line', x: 8, y: 5 }, { t: 'line', x: 9.5, y: 6.5 },
+            { t: 'line', x: 9, y: 4.5 }, { t: 'line', x: 11, y: 3 }, { t: 'line', x: 8.5, y: 2 }, { t: 'line', x: 7, y: 1 }, { t: 'line', x: 5, y: -1 }, { t: 'line', x: 4, y: -2.5 },
+            { t: 'line', x: 3, y: -5 }, { t: 'line', x: 3, y: -6 }, { t: 'line', x: 5, y: -6.5 }, { t: 'line', x: 5.5, y: -7 }, { t: 'line', x: 4, y: -7.5 }, { t: 'line', x: 2, y: -7.5 }
+        ]}
+    };
+
+    function startTimer() {
+        if (isTimerRunning) return;
+        isTimerRunning = true;
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimerDisplay, 1000);
+    }
+
+    function stopTimer() {
+        isTimerRunning = false;
+        clearInterval(timerInterval);
+    }
+
+    function resetTimer() {
+        stopTimer();
+        document.getElementById('timer-display').innerText = '00:00';
+    }
+
+    function updateTimerDisplay() {
+        let elapsed = Math.floor((Date.now() - startTime) / 1000);
+        let m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        let s = String(elapsed % 60).padStart(2, '0');
+        document.getElementById('timer-display').innerText = `${m}:${s}`;
+    }
+
+    // Трансформація координат
+    function getPx(mathX) { return centerX + mathX * scale; }
+    function getPy(mathY) { return centerY - mathY * scale; }
+    
+    function getMathPos(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const pxX = clientX - rect.left;
+        const pxY = clientY - rect.top;
+        let mathX = Math.round(((pxX - centerX) / scale) * 2) / 2;
+        let mathY = Math.round(((centerY - pxY) / scale) * 2) / 2;
+        return { x: mathX, y: mathY };
+    }
+
+    function drawGrid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.font = '11px sans-serif'; 
+        ctx.fillStyle = '#94a3b8';
+
+        // Відмальовка сітки базується на динамічному ліміті
+        for (let i = -currentLimit; i <= currentLimit; i++) {
+            let px = getPx(i);
+            let py = getPy(i);
+
+            ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(canvas.width, py); ctx.stroke();
+
+            // Підписи
+            if (i !== 0) {
+                ctx.fillText(i, px + 3, centerY - 4);
+                ctx.fillText(i, centerX + 4, py - 3);
+            }
+        }
+
+        // Осі
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(centerX, 0); ctx.lineTo(centerX, canvas.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY); ctx.stroke();
+        
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText('0', centerX + 4, centerY - 4);
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText('X', canvas.width - 15, centerY - 10);
+        ctx.fillText('Y', centerX + 10, 15);
+    }
+
+    function drawGame() {
+        drawGrid();
+
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 3;
+        ctx.fillStyle = '#1e293b';
+        
+        ctx.beginPath();
+        for (let i = 0; i < currentIndex; i++) {
+            let task = currentLevel[i];
+            let px = getPx(task.x);
+            let py = getPy(task.y);
+
+            if (task.t === 'start' || task.t === 'point') {
+                ctx.moveTo(px, py);
+            } else if (task.t === 'line') {
+                ctx.lineTo(px, py);
+            }
+        }
+        ctx.stroke();
+
+        for (let i = 0; i < currentIndex; i++) {
+            let task = currentLevel[i];
+            ctx.beginPath();
+            ctx.arc(getPx(task.x), getPy(task.y), 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        if (hoverPos && currentIndex < currentLevel.length) {
+            ctx.beginPath();
+            ctx.arc(getPx(hoverPos.x), getPy(hoverPos.y), 6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+            ctx.fill();
+            
+            let currentTask = currentLevel[currentIndex];
+            if (currentTask.t === 'line' && currentIndex > 0) {
+                let prevTask = currentLevel[currentIndex - 1];
+                ctx.beginPath();
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(getPx(prevTask.x), getPy(prevTask.y));
+                ctx.lineTo(getPx(hoverPos.x), getPy(hoverPos.y));
+                ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+    }
+
+    function updateUI() {
+        const listEl = document.getElementById('points-list');
+        listEl.innerHTML = '';
+        
+        let progress = (currentIndex / currentLevel.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+
+        if (currentIndex < currentLevel.length) {
+            let task = currentLevel[currentIndex];
+            let displayX = task.x.toString().replace('.', ',');
+            let displayY = task.y.toString().replace('.', ',');
+
+            document.getElementById('current-target').innerText = `(${displayX}; ${displayY})`;
+            
+            if (task.t === 'start') document.getElementById('instruction-text').innerText = 'Поставте початкову точку ламаної:';
+            else if (task.t === 'line') document.getElementById('instruction-text').innerText = 'Проведіть лінію до точки:';
+            else if (task.t === 'point') document.getElementById('instruction-text').innerText = 'Поставте окрему точку:';
+
+            document.getElementById('feedback-msg').innerText = '';
+        } else {
+            let finalTime = document.getElementById('timer-display').innerText;
+            document.getElementById('instruction-text').innerText = 'Малюнок завершено!';
+            document.getElementById('current-target').innerText = '🎉';
+            document.getElementById('feedback-msg').innerHTML = `<span class="text-success">Чудова робота! Час виконання: <b>${finalTime}</b>.</span>`;
+        }
+
+        currentLevel.forEach((task, index) => {
+            let item = document.createElement('div');
+            item.className = 'point-item';
+            let displayX = task.x.toString().replace('.', ',');
+            let displayY = task.y.toString().replace('.', ',');
+            let prefix = task.t === 'start' ? '📍 Початок: ' : (task.t === 'line' ? '  ↳ Лінія до: ' : '🔹 Точка: ');
+            
+            item.innerText = `${prefix}(${displayX}; ${displayY})`;
+
+            if (index < currentIndex) item.classList.add('done');
+            else if (index === currentIndex) item.classList.add('active');
+
+            listEl.appendChild(item);
+        });
+
+        let activeItem = listEl.querySelector('.active');
+        if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    canvas.addEventListener('click', (e) => {
+        if (currentIndex >= currentLevel.length) return;
+        let pos = getMathPos(e.clientX, e.clientY);
+        let target = currentLevel[currentIndex];
+
+        if (pos.x === target.x && pos.y === target.y) {
+            if (currentIndex === 0) startTimer();
+            currentIndex++;
+            if (currentIndex === currentLevel.length) stopTimer();
+            updateUI();
+        } else {
+            let displayPx = pos.x.toString().replace('.', ',');
+            let displayPy = pos.y.toString().replace('.', ',');
+            document.getElementById('feedback-msg').innerHTML = `<span class="text-error">Ти клікнув (${displayPx}; ${displayPy}). Шукай уважніше!</span>`;
+        }
+        drawGame();
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        hoverPos = getMathPos(e.clientX, e.clientY);
+        drawGame();
+    });
+    
+    canvas.addEventListener('mouseleave', () => {
+        hoverPos = null;
+        drawGame();
+    });
+
+    function loadLevel(lvlId) {
+        document.querySelectorAll('.lvl-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-lvl-${lvlId}`).classList.add('active');
+
+        // Отримуємо масив точок та ліміт осей для поточного рівня
+        currentLevel = levels[lvlId].data;
+        currentLimit = levels[lvlId].limit;
+        
+        // Розраховуємо новий масштаб (canvas.width ділимо на кількість одиниць по всій ширині)
+        scale = canvas.width / (currentLimit * 2);
+
+        currentIndex = 0;
+        hoverPos = null;
+        
+        resetTimer();
+        updateUI();
+        drawGame();
+    }
+
+    loadLevel(1);
+</script>
+
+</body>
+</html>
