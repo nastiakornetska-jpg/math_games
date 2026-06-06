@@ -157,6 +157,24 @@
             width: 0%;
             transition: 0.3s ease;
         }
+
+        /* АДАПТАЦІЯ ДЛЯ МОБІЛЬНИХ ТА ПЛАНШЕТІВ */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column; /* Панель переноситься вниз */
+        padding: 15px;
+        gap: 15px;
+    }
+    .level-selector .lvl-btn {
+        flex: 1 1 calc(50% - 10px); /* По 2 кнопки в ряд на телефоні */
+    }
+    canvas {
+        width: 100%; /* Гумове полотно */
+        max-width: 600px;
+        height: auto;
+        touch-action: none; /* Забороняє скрол сторінки пальцем при спробі поставити точку */
+    }
+}
     </style>
 </head>
 <body>
