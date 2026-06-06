@@ -229,6 +229,26 @@
         /* Анімації */
         @keyframes pop { 0% { transform: scale(0.8); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
         .pop-anim { animation: pop 0.3s ease-out forwards; }
+
+        /* АДАПТАЦІЯ ДЛЯ МОБІЛЬНИХ ТА ПЛАНШЕТІВ */
+@media (max-width: 768px) {
+    .main-container { padding: 0; }
+    .game-wrapper {
+        flex-direction: column; /* Ставимо панель під сіткою */
+        padding: 15px;
+        gap: 15px;
+    }
+    .grid-container {
+        /* Зменшуємо розмір клітинок, щоб вони влізли в екран телефону */
+        grid-template-columns: repeat(11, min(8vw, 35px));
+        grid-template-rows: repeat(11, min(8vw, 35px));
+    }
+    .cell { font-size: 18px; }
+    .tabs { flex-wrap: wrap; }
+    .tab-btn { font-size: 14px; padding: 8px; }
+    #m1-target, #m3-found { font-size: 28px !important; }
+    .stat-box strong { font-size: 22px; }
+}
     </style>
 </head>
 <body>
